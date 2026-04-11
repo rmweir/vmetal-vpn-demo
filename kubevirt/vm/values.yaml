@@ -1,0 +1,64 @@
+namespace: default
+
+# Set to false to skip deploying VMs and VirtualBMC (rack resources).
+# Useful when deploying only BareMetalHost resources against a separate cluster.
+rack:
+  enabled: true
+
+# Set to false to skip deploying BareMetalHost resources.
+# Useful when deploying only rack resources (VMs + VirtualBMC) and BareMetalHost
+# resources will be applied separately against the platform cluster.
+bmh:
+  enabled: true
+
+vms:
+  - name: bare-metal-1
+    mac: "02:00:00:00:00:01"
+    cpu:
+      cores: 2
+      millicores: "2000m"
+    memory: 4Gi
+    disk:
+      size: 100Gi
+    bridge: br0
+    # bmcAddress overrides the BMC address used in the BareMetalHost resource.
+    # Defaults to the cluster-local VirtualBMC service DNS name, which works when
+    # rack and platform are on the same cluster. Set this to an external address
+    # (e.g. redfish://1.2.3.4:30443) when deploying BareMetalHost resources against
+    # a separate platform cluster.
+    bmcAddress: ""
+    # nodePort exposes the VirtualBMC HTTPS endpoint on the node's external IP.
+    # Required when Metal3 runs outside this cluster.
+    nodePort: 30443
+    bmh:
+      ip: 192.168.100.10/24
+      gateway: 192.168.100.1
+      dns: 8.8.8.8
+      bmc:
+        username: admin
+        password: admin
+      boot:
+        namespace: default
+        rootDevice: /dev/vda
+
+  - name: bare-metal-2
+    mac: "02:00:00:00:00:02"
+    cpu:
+      cores: 2
+      millicores: "2000m"
+    memory: 4Gi
+    disk:
+      size: 100Gi
+    bridge: br0
+    bmcAddress: ""
+    nodePort: 30444
+    bmh:
+      ip: 192.168.100.11/24
+      gateway: 192.168.100.1
+      dns: 8.8.8.8
+      bmc:
+        username: admin
+        password: admin
+      boot:
+        namespace: default
+        rootDevice: /dev/vda

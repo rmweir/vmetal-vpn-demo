@@ -1,0 +1,38 @@
+{{- if $.Values.bmh.enabled }}
+{{- range .Values.vms }}
+{{- $bmcAddress := .bmcAddress | default (printf "redfish+http://%s-virtbmc.%s.svc.cluster.local:10080" .name $.Values.namespace) }}
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  namespace: {{ .bmh.boot.namespace }}
+  name: {{ .name }}
+  labels:
+    app.kubernetes.io/name: {{ .name }}
+  annotations:
+    metal3.vcluster.com/ip-address: {{ .bmh.ip }}
+    metal3.vcluster.com/dns-servers: {{ .bmh.dns }}
+    metal3.vcluster.com/gateway: {{ .bmh.gateway }}
+spec:
+  online: true
+  automatedCleaningMode: disabled
+  bootMACAddress: {{ .mac | quote }}
+  bmc:
+    address: {{ $bmcAddress }}
+    credentialsName: {{ .name }}-boot-bmc
+    disableCertificateVerification: true
+  rootDeviceHints:
+    deviceName: {{ .bmh.boot.rootDevice }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: {{ .bmh.boot.namespace }}
+  name: {{ .name }}-boot-bmc
+stringData:
+  username: {{ .bmh.bmc.username | quote }}
+  password: {{ .bmh.bmc.password | quote }}
+
+---
+{{- end }}
+{{- end }}
