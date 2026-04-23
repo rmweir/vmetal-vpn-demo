@@ -35,6 +35,15 @@ spec:
                 iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o $DEFAULT_IFACE -j MASQUERADE
             fi
 
+            # Allow forwarding between pod network and br0 so cluster pods (e.g. Ironic)
+            # can reach br0 IPs (e.g. VirtualBMC) via L3 routing.
+            if ! iptables -C FORWARD -i br0 -j ACCEPT 2>/dev/null; then
+                iptables -I FORWARD -i br0 -j ACCEPT
+            fi
+            if ! iptables -C FORWARD -o br0 -j ACCEPT 2>/dev/null; then
+                iptables -I FORWARD -o br0 -j ACCEPT
+            fi
+
             sleep infinity
         securityContext:
           privileged: true

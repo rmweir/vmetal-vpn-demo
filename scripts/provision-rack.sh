@@ -5,14 +5,11 @@ set -euo pipefail
 # a vind cluster, KubeVirt, bridge networking, and CNI static plugin.
 #
 # Usage:
-#   SSH_KEY_NAME=my-key ./scripts/provision-rack.sh
+#   ./scripts/provision-rack.sh
 #
 # Optional:
-#   SSH_KEY_FILE  Path to private key (default: ~/.ssh/$SSH_KEY_NAME.pem)
-#   REGION        AWS region (default: us-west-2)
+#   REGION  AWS region (default: us-west-2)
 
-SSH_KEY_NAME="${SSH_KEY_NAME:?SSH_KEY_NAME is required}"
-SSH_KEY_FILE="${SSH_KEY_FILE:-$HOME/.ssh/${SSH_KEY_NAME}.pem}"
 REGION="${REGION:-us-west-2}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -21,6 +18,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ssh_cmd() {
   ssh -i "$SSH_KEY_FILE" -o StrictHostKeyChecking=no ubuntu@"$PUBLIC_IP" "$@"
 }
+
+# --- Create SSH key pair ---
+KEY_VARS=$("$SCRIPT_DIR/create-ssh-key.sh" --region "$REGION") || exit 1
+eval "$KEY_VARS"
 
 # --- Create EC2 instance ---
 echo "==> Creating rack EC2 instance..."
@@ -83,13 +84,30 @@ echo "==> Setting up NodePort forwarding to vind cluster..."
 VIND_IP=$(ssh_cmd "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \$(docker ps -q)" | tail -1)
 echo "    vind cluster IP: $VIND_IP"
 ssh_cmd "sudo sysctl -w net.ipv4.ip_forward=1"
+# Clear any existing rules for these ports before adding to avoid duplicates on rerun
+ssh_cmd "sudo iptables -t nat -D PREROUTING -p tcp --dport 30443 -j DNAT --to-destination ${VIND_IP}:30443 2>/dev/null || true"
+ssh_cmd "sudo iptables -t nat -D POSTROUTING -d ${VIND_IP} -j MASQUERADE 2>/dev/null || true"
+ssh_cmd "sudo iptables -D FORWARD -p tcp -d ${VIND_IP} --dport 30443 -j ACCEPT 2>/dev/null || true"
+ssh_cmd "sudo iptables -D FORWARD -p tcp -s ${VIND_IP} -j ACCEPT 2>/dev/null || true"
 ssh_cmd "sudo iptables -t nat -A PREROUTING -p tcp --dport 30443 -j DNAT --to-destination ${VIND_IP}:30443"
-ssh_cmd "sudo iptables -t nat -A PREROUTING -p tcp --dport 30444 -j DNAT --to-destination ${VIND_IP}:30444"
 ssh_cmd "sudo iptables -t nat -A POSTROUTING -d ${VIND_IP} -j MASQUERADE"
 ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -d ${VIND_IP} --dport 30443 -j ACCEPT"
-ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -d ${VIND_IP} --dport 30444 -j ACCEPT"
 ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -s ${VIND_IP} -j ACCEPT"
+
+# --- Install cert-manager on vind cluster (required for Metal3 webhooks) ---
+echo "==> Installing cert-manager on vind cluster..."
+ssh_cmd "KUBECONFIG=~/kubevirt/kubeconfig \
+  helm upgrade --install cert-manager cert-manager \
+    --repo https://charts.jetstack.io \
+    --namespace cert-manager \
+    --create-namespace \
+    --version v1.19.2 \
+    --set crds.enabled=true \
+    --wait"
 
 echo ""
 echo "==> Rack is ready"
-echo "    SSH: ssh -i $SSH_KEY_FILE ubuntu@$PUBLIC_IP"
+echo "    SSH:  ssh -i $SSH_KEY_FILE ubuntu@$PUBLIC_IP"
+echo "    BMC:  redfish+http://${PUBLIC_IP}:30443"
+echo ""
+echo "    Next: run 'make rack-connect' to connect rack-mgmt to the platform."

@@ -27,7 +27,11 @@ vms:
     # (e.g. redfish://1.2.3.4:30443) when deploying BareMetalHost resources against
     # a separate platform cluster.
     bmcAddress: ""
-    # nodePort exposes the VirtualBMC HTTPS endpoint on the node's external IP.
+    # bmcBr0Ip assigns a static IP on br0 to the VirtualBMC pod via Multus, making
+    # it reachable at a real IP on the provisioning network (like a physical BMC).
+    # When set, takes precedence over bmcAddress and the cluster-local service default.
+    bmcBr0Ip: "192.168.100.2"
+    # nodePort exposes the VirtualBMC endpoint on the node's external IP.
     # Required when Metal3 runs outside this cluster.
     nodePort: 30443
     bmh:
@@ -41,24 +45,3 @@ vms:
         namespace: default
         rootDevice: /dev/vda
 
-  - name: bare-metal-2
-    mac: "02:00:00:00:00:02"
-    cpu:
-      cores: 2
-      millicores: "2000m"
-    memory: 4Gi
-    disk:
-      size: 100Gi
-    bridge: br0
-    bmcAddress: ""
-    nodePort: 30444
-    bmh:
-      ip: 192.168.100.11/24
-      gateway: 192.168.100.1
-      dns: 8.8.8.8
-      bmc:
-        username: admin
-        password: admin
-      boot:
-        namespace: default
-        rootDevice: /dev/vda

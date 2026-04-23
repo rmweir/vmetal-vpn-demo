@@ -1,6 +1,7 @@
 {{- if $.Values.bmh.enabled }}
 {{- range .Values.vms }}
-{{- $bmcAddress := .bmcAddress | default (printf "redfish+http://%s-virtbmc.%s.svc.cluster.local:10080" .name $.Values.namespace) }}
+{{- $defaultAddr := .bmcBr0Ip | default "" | ternary (printf "redfish+http://%s:10080" (.bmcBr0Ip | default "")) (printf "redfish+http://%s-virtbmc.%s.svc.cluster.local:10080" .name $.Values.namespace) }}
+{{- $bmcAddress := .bmcAddress | default $defaultAddr }}
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
