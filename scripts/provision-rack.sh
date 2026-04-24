@@ -82,17 +82,29 @@ ssh_cmd "make -C ~/kubevirt create-rack"
 # --- Forward NodePorts to vind cluster ---
 echo "==> Setting up NodePort forwarding to vind cluster..."
 VIND_IP=$(ssh_cmd "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \$(docker ps -q)" | tail -1)
+CONTAINER_ID=$(ssh_cmd "docker ps -q")
 echo "    vind cluster IP: $VIND_IP"
 ssh_cmd "sudo sysctl -w net.ipv4.ip_forward=1"
-# Clear any existing rules for these ports before adding to avoid duplicates on rerun
-ssh_cmd "sudo iptables -t nat -D PREROUTING -p tcp --dport 30443 -j DNAT --to-destination ${VIND_IP}:30443 2>/dev/null || true"
+
+# EC2 host → vind container: forward ports 30443 (VirtualBMC) and 30022 (bare metal SSH)
+for PORT in 30443 30022; do
+  ssh_cmd "sudo iptables -t nat -D PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination ${VIND_IP}:${PORT} 2>/dev/null || true"
+  ssh_cmd "sudo iptables -D FORWARD -p tcp -d ${VIND_IP} --dport ${PORT} -j ACCEPT 2>/dev/null || true"
+  ssh_cmd "sudo iptables -t nat -A PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination ${VIND_IP}:${PORT}"
+  ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -d ${VIND_IP} --dport ${PORT} -j ACCEPT"
+done
 ssh_cmd "sudo iptables -t nat -D POSTROUTING -d ${VIND_IP} -j MASQUERADE 2>/dev/null || true"
-ssh_cmd "sudo iptables -D FORWARD -p tcp -d ${VIND_IP} --dport 30443 -j ACCEPT 2>/dev/null || true"
 ssh_cmd "sudo iptables -D FORWARD -p tcp -s ${VIND_IP} -j ACCEPT 2>/dev/null || true"
-ssh_cmd "sudo iptables -t nat -A PREROUTING -p tcp --dport 30443 -j DNAT --to-destination ${VIND_IP}:30443"
 ssh_cmd "sudo iptables -t nat -A POSTROUTING -d ${VIND_IP} -j MASQUERADE"
-ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -d ${VIND_IP} --dport 30443 -j ACCEPT"
 ssh_cmd "sudo iptables -I FORWARD 1 -p tcp -s ${VIND_IP} -j ACCEPT"
+
+# Inside vind container: forward port 30022 → bare metal node SSH (192.168.100.100:22)
+# br0 lives in the container's netns so this is the only way to reach it from outside
+NODE_IP="192.168.100.100"
+ssh_cmd "docker exec ${CONTAINER_ID} iptables -t nat -D PREROUTING -p tcp --dport 30022 -j DNAT --to-destination ${NODE_IP}:22 2>/dev/null || true"
+ssh_cmd "docker exec ${CONTAINER_ID} iptables -D FORWARD -p tcp -d ${NODE_IP} --dport 22 -j ACCEPT 2>/dev/null || true"
+ssh_cmd "docker exec ${CONTAINER_ID} iptables -t nat -A PREROUTING -p tcp --dport 30022 -j DNAT --to-destination ${NODE_IP}:22"
+ssh_cmd "docker exec ${CONTAINER_ID} iptables -I FORWARD 1 -p tcp -d ${NODE_IP} --dport 22 -j ACCEPT"
 
 # --- Install cert-manager on vind cluster (required for Metal3 webhooks) ---
 echo "==> Installing cert-manager on vind cluster..."
@@ -109,5 +121,6 @@ echo ""
 echo "==> Rack is ready"
 echo "    SSH:  ssh -i $SSH_KEY_FILE ubuntu@$PUBLIC_IP"
 echo "    BMC:  redfish+http://${PUBLIC_IP}:30443"
+echo "    Node SSH: ssh -p 30022 ubuntu@${PUBLIC_IP}  (via ~/.ssh/vmetal-demo/node-key)"
 echo ""
 echo "    Next: run 'make rack-connect' to connect rack-mgmt to the platform."

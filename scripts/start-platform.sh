@@ -104,7 +104,10 @@ EOF
 
 echo "==> Applying platform manifests..."
 for i in $(seq 1 10); do
-  kubectl apply -f "$REPO_ROOT/manifests/" && break
+  kubectl apply \
+    -f "$REPO_ROOT/manifests/node-environment.yaml" \
+    -f "$REPO_ROOT/manifests/os-image.yaml" \
+    -f "$REPO_ROOT/manifests/ssh-key.yaml" && break
   yellow "    Platform API not ready yet, retrying in 10s... ($i/10)"
   sleep 10
 done

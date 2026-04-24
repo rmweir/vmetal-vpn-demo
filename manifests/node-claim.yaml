@@ -7,6 +7,7 @@ spec:
   providerRef: metal3
   typeRef: metal3.vm
   environmentRef: bare-metal
+  vClusterRef: metal-vcluster
   owner:
     user: admin
   properties:

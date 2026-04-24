@@ -1,0 +1,28 @@
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: bare-metal-1
+  namespace: default
+  annotations:
+    metal3.vcluster.com/ip-address: 192.168.100.10/24
+    metal3.vcluster.com/dns-servers: 8.8.8.8
+    metal3.vcluster.com/gateway: 192.168.100.1
+spec:
+  online: true
+  automatedCleaningMode: disabled
+  bootMACAddress: "02:00:00:00:00:01"
+  bmc:
+    address: redfish+http://192.168.100.2:10080
+    credentialsName: bare-metal-1-boot-bmc
+    disableCertificateVerification: true
+  rootDeviceHints:
+    deviceName: /dev/vda
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bare-metal-1-boot-bmc
+  namespace: default
+stringData:
+  username: "admin"
+  password: "admin"

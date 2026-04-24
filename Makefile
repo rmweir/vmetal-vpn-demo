@@ -1,4 +1,4 @@
-.PHONY: setup platform-start rack-init rack-up rack-down rack-ip rack-ssh rack-provision rack-connect
+.PHONY: setup platform-start cp-start cp-down cp-ip cp-ssh rack-init rack-up rack-down rack-ip rack-ssh rack-provision rack-connect node-vcluster node-claim
 
 SSH_KEY_NAME ?=
 SSH_KEY_FILE ?= $(HOME)/.ssh/$(SSH_KEY_NAME).pem
@@ -12,6 +12,18 @@ setup:
 
 platform-start:
 	./scripts/start-platform.sh
+
+cp-start:
+	./scripts/start-cp-cluster.sh
+
+cp-down:
+	tofu -chdir=cp-node destroy -var ssh_key_name=$$(tofu -chdir=cp-node output -raw ssh_key_name 2>/dev/null || echo "unused") -var region=$(REGION)
+
+cp-ip:
+	@tofu -chdir=cp-node output -raw public_ip
+
+cp-ssh: require-ssh-key
+	@ssh -i $(SSH_KEY_FILE) ubuntu@$$(tofu -chdir=cp-node output -raw public_ip)
 
 rack-init:
 	tofu -chdir=rack init
@@ -33,3 +45,9 @@ rack-provision:
 
 rack-connect:
 	REGION=$(REGION) ./scripts/connect-rack.sh
+
+node-vcluster:
+	kubectl apply -f manifests/metal-vcluster.yaml
+
+node-claim:
+	kubectl apply -f manifests/node-claim.yaml
