@@ -17,3 +17,11 @@ spec:
           enabled: true
           vpn:
             enabled: true
+          autoNodes:
+            - provider: metal3
+              static:
+                - name: bare-metal
+                  quantity: 1
+              properties:
+                vcluster.com/os-image: ubuntu2404-20260307
+                vcluster.com/ssh-keys: demo

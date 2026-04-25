@@ -1,4 +1,4 @@
-.PHONY: setup platform-start cp-start cp-down cp-ip cp-ssh rack-init rack-up rack-down rack-ip rack-ssh rack-provision rack-connect node-vcluster node-claim
+.PHONY: setup platform-start cp-start cp-down cp-ip cp-ssh rack-init rack-up rack-down rack-ip rack-ssh rack-provision rack-connect node-vcluster
 
 SSH_KEY_NAME ?=
 SSH_KEY_FILE ?= $(HOME)/.ssh/$(SSH_KEY_NAME).pem
@@ -48,6 +48,3 @@ rack-connect:
 
 node-vcluster:
 	kubectl apply -f manifests/metal-vcluster.yaml
-
-node-claim:
-	kubectl apply -f manifests/node-claim.yaml

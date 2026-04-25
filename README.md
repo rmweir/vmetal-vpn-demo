@@ -36,8 +36,7 @@ make platform-start    # start vCluster Platform locally (prompts for license to
 make rack-provision    # provision rack EC2, deploy KubeVirt VMs + VirtualBMC
 make rack-connect      # connect rack to platform as rack-mgmt, deploy Metal3
 make cp-start          # provision CP node EC2, create vind cluster, register as metal-cp
-make node-vcluster     # create the vCluster (privateNodes + VPN enabled)
-make node-claim        # claim a bare metal node into the vCluster
+make node-vcluster     # create the vCluster — autoNodes provisions a bare metal node automatically
 ```
 
 ## Credits
