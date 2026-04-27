@@ -94,9 +94,13 @@ echo "Checking required tools..."
 echo ""
 
 missing=()
+no_auto_install=()
 
-check "OpenTofu" "tofu"  || missing+=("tofu")
-check "AWS CLI" "aws"    || missing+=("aws")
+check "OpenTofu"    "tofu"      || missing+=("tofu")
+check "AWS CLI"     "aws"       || missing+=("aws")
+check "vcluster CLI" "vcluster" || { missing+=("vcluster"); no_auto_install+=("vcluster"); }
+check "kubectl"     "kubectl"   || { missing+=("kubectl");  no_auto_install+=("kubectl"); }
+check "Docker"      "docker"    || { missing+=("docker");   no_auto_install+=("docker"); }
 
 echo ""
 
@@ -109,6 +113,15 @@ echo "The following tools are missing: ${missing[*]}"
 echo ""
 
 for tool in "${missing[@]}"; do
+  # Tools without auto-install: print install hint
+  if [[ " ${no_auto_install[*]} " == *" $tool "* ]]; then
+    case "$tool" in
+      vcluster) yellow "  Install vcluster CLI: https://www.vcluster.com/docs/vcluster/next/getting-started/install-vcluster-cli" ;;
+      kubectl)  yellow "  Install kubectl: https://kubernetes.io/docs/tasks/tools/" ;;
+      docker)   yellow "  Install Docker: https://docs.docker.com/get-docker/" ;;
+    esac
+    continue
+  fi
   if ask_install "$tool"; then
     case "$tool" in
       tofu) install_tofu ;;

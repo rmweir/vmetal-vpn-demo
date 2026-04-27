@@ -74,10 +74,11 @@ flowchart TD
 
 The demo simulates the above using EC2 instances and KubeVirt VMs instead of real hardware:
 
-- **Bare metal servers** → KubeVirt VMs running inside a vind cluster on EC2
-- **BMC (Redfish/IPMI)** → VirtualBMC exposed on HTTP NodePorts
-- **Relay cluster** → `rack-mgmt` vind cluster on the rack EC2
-- **Control plane cluster** → `metal-cp` vind cluster on a separate EC2
+- **Bare metal servers** → KubeVirt VMs running inside `rack-mgmt` on the rack EC2
+- **BMC (Redfish/IPMI)** → VirtualBMC pods inside `rack-mgmt`, attached to `br0` via Multus so Metal3 can reach them on the provisioning network
+- **Metal3** → deployed by the platform onto `rack-mgmt` via the NodeProvider, giving it L2 access to `br0` alongside VirtualBMC and the VMs
+- **Relay cluster** → `rack-mgmt` vind cluster on the rack EC2 (same cluster as VMs and Metal3)
+- **Tenant Cluster control plane** → `metal-cp` vind cluster on a separate EC2
 
 ```mermaid
 flowchart TD
@@ -131,8 +132,7 @@ flowchart TD
 
 - AWS credentials configured (`aws configure` or environment variables)
 - An EC2 key pair; set `SSH_KEY_NAME` and `SSH_KEY_FILE` accordingly
-- [OpenTofu](https://opentofu.org) — run `./scripts/setup.sh` to install
-- [vcluster CLI](https://www.vcluster.com/docs/vcluster/next/getting-started/install-vcluster-cli)
+- Run `./scripts/setup.sh` to check and install prerequisites (OpenTofu, AWS CLI, vcluster CLI, kubectl, Docker)
 
 ## Full demo setup
 
