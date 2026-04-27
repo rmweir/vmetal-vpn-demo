@@ -1,6 +1,6 @@
 # vMetal VPN Demo
 
-Demonstrates vCluster Platform provisioning bare-metal nodes in a remote rack, with the provisioned nodes joining a Tenant Cluster via the platform VPN.
+Demonstrates vCluster Platform provisioning bare-metal nodes in a remote rack, with the provisioned nodes joining a Tenant Cluster whose control plane lives on a completely separate network. The control plane does not need to accept inbound traffic from the node network — nodes join via the platform VPN, so only outbound connectivity from each site to the platform is required.
 
 ## Architecture
 
