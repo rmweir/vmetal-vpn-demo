@@ -34,8 +34,8 @@ flowchart TD
         tor --> server1 & server2
     end
 
-    subgraph cp["Control Plane"]
-        subgraph k8s["Kubernetes Cluster"]
+    subgraph cp["Separate Rack / Cloud (different network)"]
+        subgraph k8s["Tenant Cluster Control Plane"]
             vci["Tenant Cluster\nprivateNodes + VPN"]
         end
     end
