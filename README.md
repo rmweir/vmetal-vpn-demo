@@ -9,9 +9,9 @@ vCluster Platform connects to a remote rack via a relay cluster running the plat
 ```mermaid
 flowchart TD
     subgraph cloud["vCluster Platform (cloud / on-prem)"]
-        platform["vCluster Platform"]
+        plat["vCluster Platform"]
         metal3["Metal3 NodeProvider"]
-        platform --- metal3
+        plat --- metal3
     end
 
     subgraph rack["Remote Rack (data center)"]
@@ -143,13 +143,13 @@ flowchart TD
     vm1 & vm2 -->|node join| platform
     platform -->|VPN| vci
 
-    classDef platform fill:#a5d8ff,stroke:#4a9eed,stroke-width:2px,color:#1e3a5f
+    classDef platNode fill:#a5d8ff,stroke:#4a9eed,stroke-width:2px,color:#1e3a5f
     classDef provider fill:#d0bfff,stroke:#8b5cf6,stroke-width:2px,color:#2d1b69
     classDef bmc fill:#ffc9c9,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
     classDef vm fill:#b2f2bb,stroke:#22c55e,stroke-width:2px,color:#14532d
     classDef vciNode fill:#b2f2bb,stroke:#22c55e,stroke-width:3px,color:#14532d
 
-    class platform platform
+    class platform platNode
     class metal3 provider
     class vbmc bmc
     class vm1,vm2 vm
