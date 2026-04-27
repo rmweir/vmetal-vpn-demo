@@ -16,8 +16,8 @@ flowchart TD
 
     subgraph rack["Remote Rack (data center)"]
         relay["Relay Cluster\n(platform agent)"]
-        switch["Top-of-Rack Switch"]
-        relay --- switch
+        tor["Top-of-Rack Switch"]
+        relay --- tor
         subgraph bm1_box["Bare Metal Server 1"]
             bmc1["BMC\nRedfish / IPMI"]
             server1["Server 1"]
@@ -28,8 +28,8 @@ flowchart TD
             server2["Server 2"]
             bmc2 --> server2
         end
-        switch --> bmc1 & bmc2
-        switch --> server1 & server2
+        tor --> bmc1 & bmc2
+        tor --> server1 & server2
     end
 
     subgraph cp["Control Plane"]
@@ -38,24 +38,24 @@ flowchart TD
         end
     end
 
-    platform -->|agent tunnel| relay
-    platform -->|agent tunnel| k8s
-    metal3 -->|Redfish provisioning| switch
-    server1 & server2 -->|node join| platform
-    platform -->|VPN| vci
+    plat -->|agent tunnel| relay
+    plat -->|agent tunnel| k8s
+    metal3 -->|Redfish provisioning| tor
+    server1 & server2 -->|node join| plat
+    plat -->|VPN| vci
 
-    classDef platform fill:#a5d8ff,stroke:#4a9eed,stroke-width:2px,color:#1e3a5f
+    classDef platNode fill:#a5d8ff,stroke:#4a9eed,stroke-width:2px,color:#1e3a5f
     classDef provider fill:#d0bfff,stroke:#8b5cf6,stroke-width:2px,color:#2d1b69
     classDef relayNode fill:#eebefa,stroke:#8b5cf6,stroke-width:2px,color:#4a044e
-    classDef switchNode fill:#fff3bf,stroke:#f59e0b,stroke-width:2px,color:#7c3a00
+    classDef torNode fill:#fff3bf,stroke:#f59e0b,stroke-width:2px,color:#7c3a00
     classDef bmc fill:#ffc9c9,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
     classDef bm fill:#b2f2bb,stroke:#22c55e,stroke-width:2px,color:#14532d
     classDef vciNode fill:#b2f2bb,stroke:#22c55e,stroke-width:3px,color:#14532d
 
-    class platform platform
+    class plat platNode
     class metal3 provider
     class relay relayNode
-    class switch switchNode
+    class tor torNode
     class bmc1,bmc2 bmc
     class server1,server2 bm
     class vci vciNode
